@@ -1,0 +1,13 @@
+# Datos descargados y referencias (se obtienen con get_*.sh)
+data/
+ref/
+*.fastq.gz
+*.fq.gz
+*.bam
+*.bai
+*.qza
+*.qzv
+
+# Resultados de los pipelines
+resultados/
+resultados_*/

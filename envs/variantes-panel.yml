@@ -1,0 +1,15 @@
+name: variantes-panel
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - fastqc
+  - fastp
+  - bwa
+  - samtools
+  - htslib          # bgzip y tabix
+  - qualimap
+  - picard
+  - freebayes
+  - rtg-tools
+  - ensembl-vep

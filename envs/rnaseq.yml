@@ -1,0 +1,20 @@
+name: rnaseq
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - fastqc
+  - trim-galore
+  - hisat2
+  - samtools
+  - qualimap
+  - htseq
+  - sra-tools
+  - r-base
+  - r-ggplot2
+  - r-pheatmap
+  - r-upsetr
+  - bioconductor-edger
+  - bioconductor-limma
+  - bioconductor-org.mm.eg.db
+  - bioconductor-go.db

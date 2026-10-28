@@ -1,0 +1,14 @@
+name: genoma-bacteriano
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - fastqc
+  - fastp
+  - spades
+  - seqkit
+  - quast
+  - prokka
+  - ncbi-amrfinderplus
+  - sra-tools       # descarga de lecturas del SRA
+  - ncbi-datasets-cli  # descarga del genoma de referencia
