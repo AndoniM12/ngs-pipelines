@@ -7,6 +7,7 @@ ref/
 *.bai
 *.qza
 *.qzv
+*.bed
 
 # Resultados de los pipelines
 resultados/
