@@ -32,33 +32,46 @@ Los cuatro pipelines comparten el mismo esqueleto: **control de calidad → proc
 
 ```mermaid
 flowchart LR
-    FQ[("FASTQ<br/>Illumina")]
+    FQ[("🧪 Lecturas de<br/>secuenciación")]
 
-    subgraph V["1 · variantes-panel"]
+    subgraph V["🩺 1 · Variantes en un paciente"]
         direction LR
-        v1["QC<br/>FastQC · fastp"] --> v2["Mapeo<br/>BWA-MEM"] --> v3["Llamada<br/>FreeBayes"] --> v4["Anotación<br/>VEP (web)"]
+        v1["🔍 Calidad<br/><i>FastQC · fastp</i>"] --> v2["🧭 Alinear<br/><i>BWA-MEM</i>"] --> v3["🎯 Buscar variantes<br/><i>FreeBayes</i>"] --> v4["📋 Interpretar<br/><i>VEP</i>"]
     end
 
-    subgraph G["2 · genoma-bacteriano"]
+    subgraph G["🦠 2 · Genoma de una bacteria"]
         direction LR
-        g1["QC<br/>FastQC · fastp"] --> g2["Ensamblaje<br/>SPAdes"] --> g3["Anotación<br/>Prokka"] --> g4["Resistencias<br/>AMRFinderPlus"]
+        g1["🔍 Calidad<br/><i>FastQC · fastp</i>"] --> g2["🧩 Montar el genoma<br/><i>SPAdes</i>"] --> g3["🏷️ Encontrar genes<br/><i>Prokka</i>"] --> g4["💊 Resistencias<br/><i>AMRFinderPlus</i>"]
     end
 
-    subgraph R["3 · rnaseq"]
+    subgraph R["🐭 3 · Expresión génica"]
         direction LR
-        r1["QC<br/>FastQC · Trim Galore"] --> r2["Mapeo<br/>HISAT2"] --> r3["Recuento<br/>htseq-count"] --> r4["Expresión diferencial<br/>edgeR · GO"]
+        r1["🔍 Calidad<br/><i>FastQC · Trim Galore</i>"] --> r2["🧭 Alinear<br/><i>HISAT2</i>"] --> r3["🔢 Contar por gen<br/><i>htseq-count</i>"] --> r4["⚖️ Comparar grupos<br/><i>edgeR · GO</i>"]
     end
 
-    subgraph M["4 · metataxonomica-16s"]
+    subgraph M["🌱 4 · Microbiota intestinal"]
         direction LR
-        m1["QC + ASVs<br/>DADA2"] --> m2["Taxonomía<br/>Naive Bayes"] --> m3["Filogenia<br/>SEPP"] --> m4["Diversidad<br/>QIIME 2 · phyloseq"]
+        m1["🔍 Calidad + ASVs<br/><i>DADA2</i>"] --> m2["🏷️ ¿Qué bacterias?<br/><i>Naive Bayes</i>"] --> m3["🌳 Parentesco<br/><i>SEPP</i>"] --> m4["📊 Diversidad<br/><i>QIIME 2 · phyloseq</i>"]
     end
 
     FQ --> V & G & R & M
-    V --> oV["VCF anotado"]
-    G --> oG["Genoma anotado<br/>+ genes AMR"]
-    R --> oR["Lista de DEG<br/>+ rutas GO"]
-    M --> oM["Composición<br/>y diversidad"]
+    V --> oV["🧬 Variantes con<br/>impacto clínico"]
+    G --> oG["🦠 Genoma anotado<br/>y genes de resistencia"]
+    R --> oR["📈 Genes que suben<br/>o bajan + funciones"]
+    M --> oM["🥧 Quién vive ahí<br/>y cuánta variedad hay"]
+
+    class FQ dato
+    class v1,g1,r1,m1 qc
+    class v2,g2,r2,m2 proc
+    class v3,g3,r3,m3 ana
+    class v4,g4,r4,m4 inter
+    class oV,oG,oR,oM res
+    classDef dato fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef qc fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef proc fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef ana fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef inter fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef res fill:#ede9fe,stroke:#7c3aed,color:#3b0764,font-weight:bold
 ```
 
 | Pipeline | Pregunta | Datos de la práctica | Lecturas | Salida principal |
@@ -155,8 +168,19 @@ Todos los scripts de Bash comparten el mismo diseño, para que pasar de uno a ot
 
 ```mermaid
 flowchart LR
-    A["get_*.sh<br/>descarga de datos"] --> B["run_*.sh<br/>pipeline en Bash"] --> C["resultados/<br/>01_… 02_… 03_…"]
-    C -. "solo rnaseq y 16S" .-> D["*.R<br/>estadística y figuras"] --> E["resultados_*/<br/>figuras + tablas"]
+    A["⬇️ <b>get_*.sh</b><br/>descarga los datos"] --> B["⚙️ <b>run_*.sh</b><br/>ejecuta el pipeline"] --> C["📁 <b>resultados/</b><br/>una carpeta por paso"]
+    C -. "solo RNA-seq y 16S" .-> D["📊 <b>*.R</b><br/>estadística"] --> E["🖼️ <b>resultados_*/</b><br/>figuras y tablas"]
+
+    class A dato
+    class B proc
+    class C,E res
+    class D ana
+    classDef dato fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef qc fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef proc fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef ana fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef inter fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef res fill:#ede9fe,stroke:#7c3aed,color:#3b0764,font-weight:bold
 ```
 
 ---
@@ -167,23 +191,49 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    R1[/"R1.fastq.gz · R2.fastq.gz"/] --> QC1["FastQC<br/>calidad inicial"]
-    QC1 --> FP["fastp<br/>Q28 · ≥ 100 pb · adaptadores · poli-G/X"]
-    FP --> QC2["FastQC<br/>tras la limpieza"]
-    REF[/"GRCh38 chr12 (FASTA)"/] --> IDX["bwa index · samtools faidx<br/>(solo si faltan)"]
-    QC2 --> BWA["BWA-MEM -R<br/>read group desde la cabecera FASTQ"]
-    IDX --> BWA
-    BWA --> SORT["samtools sort · index<br/>(sin SAM intermedio)"]
-    BED[/"Panel TruSight One (BED)"/] --> HB["BED armonizado<br/>chr12 → 12 · solo contigs de la referencia"]
-    SORT --> FS["samtools flagstat"]
-    SORT --> QM["Qualimap bamqc<br/>en las regiones del panel"]
-    HB --> QM
-    SORT --> MD["Picard MarkDuplicates"]
-    MD --> FB["FreeBayes -t panel -C 30"]
-    HB --> FB
-    FB --> ST["bgzip · tabix · RTG vcfstats"]
-    ST --> OUT[("VCF final")]
-    OUT -. "fuera del script" .-> VEP["Ensembl VEP (web)<br/>anotación + filtrado<br/>p. ej. VWF stop_gained"]
+    IN[/"🧪 Lecturas del paciente<br/>R1 + R2"/]
+    REF[/"🗺️ Genoma de referencia<br/>GRCh38 · cromosoma 12"/]
+    BED[/"🎯 Genes del panel<br/>TruSight One"/]
+
+    subgraph S1["1 · ¿Las lecturas son de buena calidad?"]
+        direction LR
+        QC1["🔍 Antes<br/><i>FastQC</i>"] --> FP["✂️ Recortar bases malas<br/>y adaptadores<br/><i>fastp</i>"] --> QC2["🔍 Después<br/><i>FastQC</i>"]
+    end
+
+    subgraph S2["2 · ¿De qué parte del genoma viene cada lectura?"]
+        direction LR
+        BWA["🧭 Alinear<br/><i>BWA-MEM</i>"] --> SORT["📑 Ordenar<br/><i>samtools</i>"] --> MD["🧹 Marcar duplicados<br/><i>Picard</i>"]
+    end
+
+    subgraph S3["3 · ¿En qué se diferencia del genoma de referencia?"]
+        direction LR
+        FB["🎯 Buscar variantes<br/>solo en el panel<br/><i>FreeBayes</i>"] --> VCF[("📄 VCF")]
+    end
+
+    CTRL["📊 ¿Hay cobertura suficiente?<br/><i>Qualimap · flagstat</i>"]
+    VEP["📋 ¿Qué significa cada variante?<br/>p. ej. <i>VWF</i> stop_gained<br/><i>Ensembl VEP (web, fuera del script)</i>"]
+
+    IN --> QC1
+    QC2 --> BWA
+    REF --> BWA
+    SORT -.-> CTRL
+    MD --> FB
+    BED --> FB
+    BED -.-> CTRL
+    VCF -.-> VEP
+
+    class IN,REF,BED dato
+    class QC1,FP,QC2,CTRL qc
+    class BWA,SORT,MD proc
+    class FB ana
+    class VCF res
+    class VEP inter
+    classDef dato fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef qc fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef proc fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef ana fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef inter fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef res fill:#ede9fe,stroke:#7c3aed,color:#3b0764,font-weight:bold
 ```
 
 ### Uso
@@ -258,20 +308,52 @@ Para revisar en IGV: `04_dedup/<muestra>.dedup.bam`, `05_variants/<muestra>.vcf.
 
 ```mermaid
 flowchart TD
-    R[/"R1.fastq.gz · R2.fastq.gz"/] --> QC1["FastQC"]
-    QC1 --> FP["fastp<br/>Q25 · ≥ 151 pb · adaptadores"]
-    FP --> QC2["FastQC"]
-    QC2 --> SP["SPAdes --careful<br/>k automático (21-127)"]
-    SP --> F{"-m &gt; 0 ?"}
-    F -- "sí" --> SK["seqkit seq -m<br/>descarta contigs cortos"]
-    F -- "no" --> CT["contigs.fasta"]
-    SK --> CT
-    CT --> QU["QUAST<br/>contigs + scaffolds, con mapeo de lecturas"]
-    GBK[/"Referencia LT2 (GenBank)"/] --> DB["prokka-genbank_to_fasta_db<br/>proteoma de referencia"]
-    CT --> PK["Prokka<br/>--proteins ref · --compliant"]
-    DB --> PK
-    PK -- ".faa · .fna · .gff" --> AMR["AMRFinderPlus --plus<br/>modo combinado · 90 % id / 90 % cob"]
-    AMR --> OUT[("Genes AMR,<br/>virulencia y mutaciones")]
+    IN[/"🧪 Lecturas del aislado<br/>R1 + R2"/]
+    REF[/"📚 Genoma de referencia<br/><i>Salmonella</i> LT2"/]
+
+    subgraph S1["1 · ¿Las lecturas son de buena calidad?"]
+        direction LR
+        QC1["🔍 Antes<br/><i>FastQC</i>"] --> FP["✂️ Recortar bases malas<br/>y adaptadores<br/><i>fastp</i>"] --> QC2["🔍 Después<br/><i>FastQC</i>"]
+    end
+
+    subgraph S2["2 · Montar el genoma como un puzle"]
+        direction LR
+        SP["🧩 Unir lecturas<br/>que se solapan<br/><i>SPAdes</i>"] --> F{"¿Quitar las<br/>piezas pequeñas?<br/><i>-m</i>"}
+        F -- "sí" --> SK["✂️ Descartar contigs cortos<br/><i>seqkit</i>"] --> CT[("🧬 Contigs")]
+        F -- "no" --> CT
+    end
+
+    QU["📏 ¿Está bien montado?<br/>tamaño, N50, cobertura<br/><i>QUAST</i>"]
+
+    subgraph S3["3 · ¿Qué genes tiene?"]
+        PK["🏷️ Anotar genes<br/>usando LT2 como guía<br/><i>Prokka</i>"]
+    end
+
+    subgraph S4["4 · ¿Resiste a antibióticos?"]
+        AMR["💊 Genes y mutaciones<br/>de resistencia y virulencia<br/><i>AMRFinderPlus</i>"]
+    end
+
+    OUT[("📋 Informe de resistencias")]
+
+    IN --> QC1
+    QC2 --> SP
+    CT -.-> QU
+    CT --> PK
+    REF --> PK
+    PK --> AMR --> OUT
+
+    class IN,REF dato
+    class QC1,FP,QC2,QU qc
+    class SP,F,SK proc
+    class CT,OUT res
+    class PK ana
+    class AMR inter
+    classDef dato fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef qc fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef proc fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef ana fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef inter fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef res fill:#ede9fe,stroke:#7c3aed,color:#3b0764,font-weight:bold
 ```
 
 ### Uso
@@ -322,15 +404,8 @@ resultados/
 - **Filtrado opcional de contigs** (`-m 500`). Con 4.043 scaffolds, un N90 de 503 pb y un L90 de 2.299, la mayoría eran fragmentos cortos. Los 30 scaffolds de más de 10 kb ya suman 4,8 Mb, prácticamente el genoma completo. Con `-m 500` quedan 2.319 contigs (6,68 Mb) y Prokka anota 6.587 CDS.
 - **AMRFinderPlus en modo combinado** (proteínas + nucleótidos + GFF), que detecta tanto genes como mutaciones puntuales y evita duplicados entre ambas búsquedas.
 
-```mermaid
-pie showData
-    title Scaffolds del ensamblaje sin filtrar (4.043)
-    "> 10 kb (30 scaffolds = 4,81 Mb)" : 30
-    "≤ 10 kb" : 4013
-```
-
-> [!TIP]
-> Para saber si un hallazgo de AMRFinderPlus es un gen o una mutación, mira la columna `Method`: `EXACTX` / `BLASTX` (gen) frente a `POINTX` (mutación puntual). Que un gen esté en la base de datos no implica que sea adquirido: *emrD*, por ejemplo, es una bomba de eflujo cromosómica propia de enterobacterias.
+> [!NOTE]
+> **¿Por qué *emrD*?** Con `--plus`, AMRFinderPlus devuelve 10 genes, pero solo *emrD* tiene `Element type` = `AMR`. Los otros 9 son de virulencia (`VIRULENCE`: *invA*, *spvD*, *sseK2*…) o de respuesta al estrés (`STRESS`: *asr*).
 
 ---
 
@@ -345,33 +420,43 @@ El pipeline tiene **dos partes independientes**:
 
 ```mermaid
 flowchart TD
-    subgraph A["(a) run_rnaseq_counts.sh · una muestra"]
+    subgraph A["(a) Una muestra: de lecturas a recuentos · <i>run_rnaseq_counts.sh</i>"]
         direction TB
-        FQ[/"SRR1552444.fastq.gz<br/>SE 100 pb"/] --> QC1["FastQC"]
-        QC1 --> TG["Trim Galore<br/>adaptador automático · Q20 · ≥ 20 pb"]
-        TG --> HS["HISAT2 -k 1<br/>índice mm10"]
-        HS --> SO["samtools sort · index<br/>flagstat · FLAG · MAPQ"]
-        SO --> QR["Qualimap rnaseq<br/>origen de lecturas · sesgo 5'-3'"]
-        SO --> HT["htseq-count<br/>exón → gene_id · MAPQ ≥ 10 · sin hebra"]
-        GTF[/"GENCODE vM10 (GTF)"/] --> QR & HT
-        HT --> CS["counts.tsv<br/>+ resumen de asignación"]
+        FQ[/"🧪 Lecturas de una muestra<br/>SRR1552444"/] --> QC1["🔍 Calidad<br/><i>FastQC</i>"]
+        QC1 --> TG["✂️ Recortar adaptadores<br/><i>Trim Galore</i>"]
+        TG --> HS["🧭 Alinear al genoma del ratón<br/><i>HISAT2 · mm10</i>"]
+        GTF[/"🗺️ Mapa de genes<br/>GENCODE vM10"/] --> HT
+        HS --> HT["🔢 Contar lecturas por gen<br/><i>htseq-count</i>"]
+        HS -.-> QR["📊 ¿Caen en exones?<br/><i>Qualimap</i>"]
+        HT --> CS[("📄 Recuentos<br/>de una muestra")]
     end
 
-    subgraph B["(b) de_analysis.R · 12 muestras"]
+    subgraph B["(b) 12 muestras: ¿qué genes cambian? · <i>de_analysis.R</i>"]
         direction TB
-        MAT[/"GSE60450 GenewiseCounts<br/>6 grupos × 2 réplicas"/] --> AN["Anotación<br/>ENTREZID → SYMBOL"]
-        AN --> FE["filterByExpr"]
-        FE --> TMM["Normalización TMM"]
-        TMM --> MDS["MDS<br/>exploración"]
-        TMM --> DSP["estimateDisp · glmQLFit<br/>diseño ~ 0 + grupo"]
-        DSP --> QL["glmQLFTest<br/>lactante vs gestante<br/>(luminal y basal)"]
-        QL --> VOL["Volcano · Venn · UpSet"]
-        QL --> SH["Genes up en ambos tipos celulares"]
-        SH --> HM["Heatmap"]
-        SH --> GO["GO (goana)<br/>BP y MF"]
+        MAT[/"🧮 Tabla de recuentos<br/>6 grupos × 2 réplicas<br/>GSE60450"/] --> FE["🧹 Quitar genes<br/>casi sin expresión<br/><i>filterByExpr</i>"]
+        FE --> TMM["⚖️ Igualar muestras<br/>de distinto tamaño<br/><i>TMM</i>"]
+        TMM -.-> MDS["🗺️ ¿Se agrupan las réplicas?<br/><i>MDS</i>"]
+        TMM --> QL["🔬 Test estadístico<br/>lactancia vs gestación<br/><i>edgeR QL</i>"]
+        QL --> VOL["📈 Volcano · Venn · UpSet"]
+        QL --> SH["⬆️ Genes que suben<br/>en ambos tipos celulares"]
+        SH --> HM["🟥 Heatmap"]
+        SH --> GO["🧠 ¿Para qué sirven?<br/><i>GO</i>"]
     end
 
-    CS -. "mismo formato<br/>que una columna de la matriz" .-> MAT
+    CS -. "mismo formato que<br/>una columna de la tabla" .-> MAT
+
+    class FQ,GTF,MAT dato
+    class QC1,TG,QR,MDS qc
+    class HS,HT,FE,TMM proc
+    class QL ana
+    class VOL,SH,HM,GO inter
+    class CS res
+    classDef dato fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef qc fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef proc fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef ana fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef inter fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef res fill:#ede9fe,stroke:#7c3aed,color:#3b0764,font-weight:bold
 ```
 
 Diseño experimental de la parte (b):
@@ -437,10 +522,11 @@ resultados_de/                      (b)
 | Genes up en lactancia (luminal y basal) | n / GO BP principal | 115 / biosíntesis de colesterol y esteroles |
 
 ```mermaid
+%%{init: {"themeVariables": {"pie1": "#dc2626", "pie2": "#2563eb", "pieStrokeColor": "#ffffff", "pieOuterStrokeWidth": "0px"}}}%%
 pie showData
-    title DEG luminal lactante vs gestante (3.381)
-    "Sobreexpresados (up)" : 1805
-    "Infraexpresados (down)" : 1576
+    title Células luminales: 3.381 genes cambian de la gestación a la lactancia
+    "▲ Suben en lactancia" : 1805
+    "▼ Bajan en lactancia" : 1576
 ```
 
 ### Cambios y notas de interpretación
@@ -464,33 +550,40 @@ El análisis se divide entre **QIIME 2** (de las lecturas a las métricas de div
 
 ```mermaid
 flowchart TD
-    subgraph Q["run_qiime2_16s.sh · entorno qiime2-2021.4"]
+    subgraph Q["QIIME 2 · <i>run_qiime2_16s.sh</i>"]
         direction TB
-        MF[/"manifest.tsv<br/>FASTQ demultiplexados · SE 150 pb"/] --> IM["tools import<br/>+ demux summarize"]
-        IM --> DD["DADA2 denoise-single<br/>truncado 150 · quimeras"]
-        DD --> ASV["Tabla de ASVs<br/>+ secuencias representativas"]
-        CL[/"Clasificador Naive Bayes<br/>Greengenes 13_8 (515F/806R)"/] --> TX["classify-sklearn<br/>+ taxa barplot"]
-        ASV --> TX
-        SR[/"Referencias SEPP"/] --> SE["fragment-insertion sepp<br/>árbol filogenético"]
-        ASV --> SE
-        SE --> AR["alpha-rarefaction<br/>hasta 4.000"]
-        SE --> CM["core-metrics-phylogenetic<br/>rarefacción a 2.000"]
-        CM --> AG["Alfa: Shannon · Faith PD<br/>alpha-group-significance"]
-        CM --> BG["Beta: UniFrac (pond. / no pond.) · Bray-Curtis<br/>PERMANOVA por donante"]
-        TX --> EX["Exportación<br/>ASV.tsv · taxonomy.tsv · tree.nwk"]
-        SE --> EX
+        MF[/"🧪 Lecturas 16S<br/>48 muestras de heces"/] --> DD["🧹 Limpiar errores y<br/>agrupar secuencias idénticas<br/><i>DADA2</i>"]
+        DD --> ASV[("🧬 ASVs<br/>variantes de secuencia")]
+        CL[/"📚 Base de datos<br/>Greengenes"/] --> TX
+        ASV --> TX["🏷️ ¿Qué bacteria es cada ASV?<br/><i>Naive Bayes</i>"]
+        ASV --> SE["🌳 ¿Qué parentesco tienen?<br/><i>SEPP</i>"]
+        SE --> AL["🔢 Diversidad alfa<br/>¿cuánta variedad hay<br/>dentro de cada muestra?"]
+        SE --> BE["↔️ Diversidad beta<br/>¿se parecen las muestras<br/>entre sí?"]
     end
 
-    subgraph RR["analisis_phyloseq.R · entorno metataxonomica-R"]
+    subgraph RR["R · <i>analisis_phyloseq.R</i>"]
         direction TB
-        PS["Objeto phyloseq<br/>(qiime2R)"] --> DP["Profundidad por muestra<br/>excluye &lt; 1.000 lecturas"]
-        DP --> FA["Composición por familia<br/>abundancia relativa, top 12"]
-        DP --> AL["Shannon + Wilcoxon<br/>por muestra y por ratón"]
-        DP --> BE["PCoA Bray-Curtis / wUniFrac<br/>+ PERMANOVA (adonis2)"]
-        PS --> TR["Árbol de Betaproteobacteria"]
+        PS["📦 Reunir todo<br/><i>phyloseq</i>"] --> DP["🧹 Quitar muestras<br/>con pocas lecturas"]
+        DP --> FA["🥧 Composición<br/>por familias"]
+        DP --> SH["📊 Shannon<br/>sano vs Parkinson"]
+        DP --> PC["🗺️ Mapa de similitud<br/><i>PCoA + PERMANOVA</i>"]
+        PS --> TR["🌳 Árbol de<br/>Betaproteobacteria"]
     end
 
-    ASV & TX & SE -- ".qza" --> PS
+    ASV & TX & SE --> PS
+
+    class MF,CL dato
+    class DD,DP qc
+    class TX,SE,PS proc
+    class AL,BE ana
+    class FA,SH,PC,TR inter
+    class ASV res
+    classDef dato fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef qc fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef proc fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef ana fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef inter fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef res fill:#ede9fe,stroke:#7c3aed,color:#3b0764,font-weight:bold
 ```
 
 ### Uso
@@ -561,9 +654,24 @@ resultados_R/                     (R)
 > **Pseudorreplicación y efecto jaula.** Hay 4 muestras por ratón y los ratones comparten jaula, así que tratar cada muestra como independiente infla la significación (por eso el contraste por ratón, y por eso los p-valores de PERMANOVA son orientativos). Además, los ratones son coprófagos y comparten microbiota dentro de cada jaula: las diferencias entre jaulas pueden reflejar la jaula y no el tratamiento. Lo más correcto sería un modelo mixto con el ratón (y la jaula) como efecto aleatorio.
 
 ```mermaid
-flowchart LR
-    J["Jaula<br/>(6)"] --> RA["Ratón"] --> MU["Muestras<br/>(4 por ratón)"]
-    J -. "microbiota compartida<br/>(coprofagia)" .-> RA
+flowchart TB
+    subgraph J["🏠 Una jaula (hay 6)"]
+        direction LR
+        R1["🐭 Ratón"] -. "🔄 comparten microbiota<br/>(se comen las heces)" .- R2["🐭 Ratón"]
+    end
+    R1 --> M1["💩 💩 💩 💩<br/>4 muestras"]
+    R2 --> M2["💩 💩 💩 💩<br/>4 muestras"]
+    M1 & M2 --> W["⚠️ No son 8 datos independientes:<br/>se parecen por ser del mismo ratón<br/>y de la misma jaula"]
+
+    class R1,R2 dato
+    class M1,M2 proc
+    class W inter
+    classDef dato fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef qc fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef proc fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef ana fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef inter fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef res fill:#ede9fe,stroke:#7c3aed,color:#3b0764,font-weight:bold
 ```
 
 ---
