@@ -54,6 +54,7 @@ for f in "$R1" "$R2" "$REF_GBK"; do [[ -s "$f" ]] || { echo "No existe: $f" >&2;
 log() { echo "[$(date '+%F %T')] $*" | tee -a "${OUTDIR}/pipeline.log"; }
 
 mkdir -p "${OUTDIR}"/{01_qc_raw,02_trimming,03_assembly,04_quast,05_annotation,06_amr}
+: > "${OUTDIR}/pipeline.log"   # registro nuevo en cada ejecución, sin restos de las anteriores
 log "Muestra: ${SAMPLE} | Referencia: ${REF_GBK} | Hilos: ${THREADS}"
 
 # ---------------------------- 1. Calidad inicial -----------------------------

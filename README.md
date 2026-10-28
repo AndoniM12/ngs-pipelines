@@ -36,7 +36,7 @@ flowchart LR
 
     subgraph V["1 · variantes-panel"]
         direction LR
-        v1["QC<br/>FastQC · fastp"] --> v2["Mapeo<br/>BWA-MEM"] --> v3["Llamada<br/>FreeBayes"] --> v4["Anotación<br/>VEP"]
+        v1["QC<br/>FastQC · fastp"] --> v2["Mapeo<br/>BWA-MEM"] --> v3["Llamada<br/>FreeBayes"] --> v4["Anotación<br/>VEP (web)"]
     end
 
     subgraph G["2 · genoma-bacteriano"]
@@ -63,7 +63,7 @@ flowchart LR
 
 | Pipeline | Pregunta | Datos de la práctica | Lecturas | Salida principal |
 |---|---|---|---|---|
-| [`variantes-panel`](variantes-panel/) | ¿Qué variantes germinales tiene el paciente y cuáles son patogénicas? | Panel TruSight One, muestra NA12880, GRCh38 (chr12) | PE 2 × 151 pb | VCF anotado con VEP |
+| [`variantes-panel`](variantes-panel/) | ¿Qué variantes germinales tiene el paciente y cuáles son patogénicas? | Panel TruSight One, muestra NA12880, GRCh38 (chr12) | PE 2 × 151 pb | VCF (anotado después en VEP web) |
 | [`genoma-bacteriano`](genoma-bacteriano/) | ¿Cómo es el genoma de este aislado y qué resistencias porta? | *Salmonella enterica*, aislado clínico SRR18072959 | PE | Ensamblaje, anotación y genes AMR |
 | [`rnaseq`](rnaseq/) | ¿Qué genes cambian su expresión entre gestación y lactancia? | Glándula mamaria de ratón, GSE60450 (Fu et al., 2015) | SE 100 pb | Tablas de DEG, figuras y GO |
 | [`metataxonomica-16s`](metataxonomica-16s/) | ¿Cambia la microbiota intestinal según el donante (sano / Parkinson)? | Tutorial *PD mice* de QIIME 2 | SE 150 pb (V4) | Tabla de ASVs, taxonomía y diversidad |
@@ -77,7 +77,7 @@ flowchart LR
 | Mapeo / ensamblaje | BWA-MEM + SAMtools | SPAdes | HISAT2 + SAMtools | — |
 | QC del resultado | flagstat · Qualimap · Picard | QUAST | flagstat · Qualimap rnaseq | `denoising-stats` |
 | Análisis principal | FreeBayes · RTG vcfstats | Prokka | htseq-count · edgeR | Naive Bayes · SEPP |
-| Interpretación | VEP · `filter_vep` | AMRFinderPlus | GO (`goana`) | Diversidad alfa/beta · phyloseq · vegan |
+| Interpretación | Ensembl VEP (web) | AMRFinderPlus | GO (`goana`) | Diversidad alfa/beta · phyloseq · vegan |
 
 ---
 
@@ -91,8 +91,8 @@ ngs-pipelines/
 │   ├── rnaseq.yml
 │   └── metataxonomica-R.yml       # (QIIME 2 usa su fichero oficial)
 ├── variantes-panel/
-│   ├── get_reference.sh           # Descarga GRCh38 chr12 (+ caché de VEP)
-│   └── run_variantes_panel.sh     # Pipeline completo
+│   ├── get_reference.sh           # Descarga GRCh38 chr12
+│   └── run_variantes_panel.sh     # Pipeline hasta el VCF (VEP se usa en la web)
 ├── genoma-bacteriano/
 │   ├── get_data.sh                # Lecturas SRA + referencia LT2
 │   └── run_genoma_bacteriano.sh
@@ -112,7 +112,7 @@ Cada carpeta sigue el mismo patrón: un script `get_*.sh` que descarga los datos
 
 ## Instalación
 
-Requisitos: Linux (o WSL), [Conda/Mamba](https://github.com/conda-forge/miniforge) y espacio en disco para las referencias (la caché de VEP ocupa unos 20 GB).
+Requisitos: Linux (o WSL), [Conda/Mamba](https://github.com/conda-forge/miniforge) y espacio en disco para las referencias.
 
 ```bash
 git clone https://github.com/AndoniM12/ngs-pipelines.git && cd ngs-pipelines
@@ -133,7 +133,7 @@ conda env create -n qiime2-2021.4 --file qiime2-2021.4-py38-linux-conda.yml
 
 | Entorno | Pipeline | Herramientas principales |
 |---|---|---|
-| `variantes-panel` | 1 | fastqc, fastp, bwa, samtools, htslib, qualimap, picard, freebayes, rtg-tools, ensembl-vep |
+| `variantes-panel` | 1 | fastqc, fastp, bwa, samtools, htslib, qualimap, picard, freebayes, rtg-tools |
 | `genoma-bacteriano` | 2 | fastqc, fastp, spades, seqkit, quast, prokka, ncbi-amrfinderplus, sra-tools, ncbi-datasets-cli |
 | `rnaseq` | 3 | fastqc, trim-galore, hisat2, samtools, qualimap, htseq, sra-tools, edgeR, limma, org.Mm.eg.db |
 | `qiime2-2021.4` | 4 (parte QIIME 2) | QIIME 2 2021.4 (DADA2, feature-classifier, fragment-insertion, diversity) |
@@ -150,7 +150,7 @@ Todos los scripts de Bash comparten el mismo diseño, para que pasar de uno a ot
 - **`set -euo pipefail`**: el script se detiene en el primer error, en lugar de seguir con ficheros vacíos.
 - **Comprobación de las entradas** antes de empezar (`No existe: <fichero>`).
 - **Salidas numeradas por paso** (`01_qc_raw/`, `02_trimming/`, …), en el mismo orden que el diagrama de cada pipeline.
-- **Registro** con marca de tiempo en `<salida>/pipeline.log`.
+- **Registro** con marca de tiempo en `<salida>/pipeline.log`, que se reinicia en cada ejecución.
 - Los scripts de R escriben `sessionInfo.txt` para dejar constancia de las versiones de los paquetes.
 
 ```mermaid
@@ -182,9 +182,8 @@ flowchart TD
     MD --> FB["FreeBayes -t panel -C 30"]
     HB --> FB
     FB --> ST["bgzip · tabix · RTG vcfstats"]
-    ST --> VEP["VEP --everything<br/>caché offline GRCh38"]
-    VEP --> FV["filter_vep<br/>p. ej. VWF stop_gained"]
-    FV --> OUT[("VCF anotado")]
+    ST --> OUT[("VCF final")]
+    OUT -. "fuera del script" .-> VEP["Ensembl VEP (web)<br/>anotación + filtrado<br/>p. ej. VWF stop_gained"]
 ```
 
 ### Uso
@@ -198,7 +197,10 @@ cd variantes-panel && ./get_reference.sh
 ```
 
 > [!NOTE]
-> Las lecturas de NA12880 y el BED del panel TruSight One proceden del material del máster y no se incluyen en el repositorio. La caché de VEP (~20 GB) se instala aparte con `vep_install` (ver `get_reference.sh`) y debe coincidir con la versión de VEP.
+> Las lecturas de NA12880 y el BED del panel TruSight One proceden del material del máster y no se incluyen en el repositorio.
+
+> [!IMPORTANT]
+> **La anotación con VEP no la hace el script.** El pipeline termina en `05_variants/<muestra>.vcf.gz`. Ese VCF se sube a la [web de Ensembl VEP](https://www.ensembl.org/Tools/VEP) (*Homo sapiens*, GRCh38) y allí se anota y se filtra (p. ej. `SYMBOL = VWF` y `Consequence = stop_gained`). No hace falta instalar la caché de VEP en local.
 
 | Opción | Descripción | Por defecto |
 |---|---|---|
@@ -207,7 +209,6 @@ cd variantes-panel && ./get_reference.sh
 | `-b` | Regiones de captura (BED) | obligatorio |
 | `-s` | Nombre de la muestra (se usa como `SM` del read group) | obligatorio |
 | `-C` | Lecturas mínimas con el alelo alternativo (FreeBayes) | `30` |
-| `-c` | Directorio de la caché de VEP | `~/.vep` |
 | `-o` / `-t` | Directorio de salida / hilos | `resultados` / `4` |
 
 ### Salidas
@@ -218,8 +219,7 @@ resultados/
 ├── 02_trimming/    FASTQ limpios + informes fastp (html/json) y FastQC
 ├── 03_mapping/     <muestra>.sorted.bam, flagstat, panel.harmonized.bed, qualimap/
 ├── 04_dedup/       <muestra>.dedup.bam + métricas de duplicados
-├── 05_variants/    <muestra>.vcf.gz (+ .tbi) y vcfstats.txt
-└── 06_vep/         <muestra>.vep.vcf, resumen html y VWF_stop_gained.vcf
+└── 05_variants/    <muestra>.vcf.gz (+ .tbi) y vcfstats.txt  → se sube a VEP web
 ```
 
 Para revisar en IGV: `04_dedup/<muestra>.dedup.bam`, `05_variants/<muestra>.vcf.gz` y `03_mapping/panel.harmonized.bed`.
@@ -231,8 +231,11 @@ Para revisar en IGV: `04_dedup/<muestra>.dedup.bam`, `05_variants/<muestra>.vcf.
 | Lecturas crudas | Pares | 7.939.910 (2 × 32-151 pb) |
 | fastp (Q28, ≥ 100 pb) | Lecturas que pasan los filtros | 97,3 % · duplicación 2,6 % |
 | Qualimap (regiones del panel) | Cobertura media / MAPQ medio | 95,7× / 59,3 |
-| FreeBayes (C = 30) | Variantes / SNPs / Het:Hom | 9.798 / 6.524 / 3,52 |
-| VEP | Hallazgo | *VWF* stop_gained 12:6019487 G>A, patogénica en ClinVar (enfermedad de von Willebrand) |
+| FreeBayes (C = 30, regiones del panel) | Variantes / SNPs / Het:Hom | 2.311 / 1.601 / 17,24 |
+| VEP (web) | Hallazgo | *VWF* stop_gained 12:6019487 G>A, patogénica en ClinVar (enfermedad de von Willebrand) |
+
+> [!NOTE]
+> Sin restringir la llamada al panel (FreeBayes sobre todo el cromosoma 12, sin `-t`) se obtienen unas 9.800 variantes, 6.530 SNPs y un Het:Hom de 3,5.
 
 ### Cambios respecto a la práctica
 

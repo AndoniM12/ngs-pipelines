@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Pipeline de llamada y anotación de variantes germinales en panel de captura
+# Pipeline de llamada de variantes germinales en panel de captura
 # Illumina paired-end · Referencia GRCh38 (Ensembl)
 #
 #   FastQC -> fastp -> FastQC -> BWA-MEM -> SAMtools -> flagstat/Qualimap
-#   -> Picard MarkDuplicates -> FreeBayes -> RTG vcfstats -> VEP
+#   -> Picard MarkDuplicates -> FreeBayes -> RTG vcfstats
+#
+# La anotación del VCF con VEP no forma parte del script: se hizo en la web de
+# Ensembl VEP (https://www.ensembl.org/Tools/VEP) subiendo el VCF final.
 #
 # Autor: Andoni Moreno Lanceta
 # Uso:   ./run_variantes_panel.sh -1 R1.fastq.gz -2 R2.fastq.gz -r ref.fa \
@@ -19,7 +22,6 @@ MIN_LEN=100          # fastp: longitud mínima tras el recorte
 MIN_QUAL=28          # fastp: calidad media de la ventana (inicio, final y media)
 MIN_ALT_COUNT=30     # freebayes -C: lecturas mínimas con el alelo alternativo
                      # (30 = valor de la práctica; ver README, es muy restrictivo)
-VEP_CACHE="${HOME}/.vep"
 
 usage() {
   grep '^# Uso' -A1 "$0" | sed 's/^# //'
@@ -30,18 +32,17 @@ Opciones:
   -r  genoma de referencia (FASTA)  -b  regiones de captura (BED)
   -s  nombre de la muestra          -o  directorio de salida [${OUTDIR}]
   -t  hilos [${THREADS}]            -C  min. lecturas alelo alternativo [${MIN_ALT_COUNT}]
-  -c  directorio de la caché de VEP [${VEP_CACHE}]
 EOF
   exit 1
 }
 
-while getopts "1:2:r:b:s:o:t:C:c:h" opt; do
+while getopts "1:2:r:b:s:o:t:C:h" opt; do
   case $opt in
     1) R1=$OPTARG ;;        2) R2=$OPTARG ;;
     r) REF=$OPTARG ;;       b) BED=$OPTARG ;;
     s) SAMPLE=$OPTARG ;;    o) OUTDIR=$OPTARG ;;
     t) THREADS=$OPTARG ;;   C) MIN_ALT_COUNT=$OPTARG ;;
-    c) VEP_CACHE=$OPTARG ;; *) usage ;;
+    *) usage ;;
   esac
 done
 [[ -z "${R1:-}" || -z "${R2:-}" || -z "${REF:-}" || -z "${BED:-}" || -z "${SAMPLE:-}" ]] && usage
@@ -49,7 +50,8 @@ for f in "$R1" "$R2" "$REF" "$BED"; do [[ -s "$f" ]] || { echo "No existe: $f" >
 
 log() { echo "[$(date '+%F %T')] $*" | tee -a "${OUTDIR}/pipeline.log"; }
 
-mkdir -p "${OUTDIR}"/{01_qc_raw,02_trimming,03_mapping,04_dedup,05_variants,06_vep}
+mkdir -p "${OUTDIR}"/{01_qc_raw,02_trimming,03_mapping,04_dedup,05_variants}
+: > "${OUTDIR}/pipeline.log"   # registro nuevo en cada ejecución, sin restos de las anteriores
 log "Muestra: ${SAMPLE} | Referencia: ${REF} | Panel: ${BED} | Hilos: ${THREADS}"
 
 # ---------------------------- 1. Calidad inicial -----------------------------
@@ -131,17 +133,10 @@ freebayes -f "$REF" -t "$BED_USE" -C "$MIN_ALT_COUNT" "$DEDUP" > "$VCF"
 bgzip -f "$VCF" && tabix -p vcf "${VCF}.gz"
 rtg vcfstats "${VCF}.gz" > "${OUTDIR}/05_variants/${SAMPLE}.vcfstats.txt"
 
-# ---------------------------- 7. Anotación con VEP ---------------------------
-log "7. Anotación funcional con VEP (GRCh38, caché offline)"
-VEP_OUT="${OUTDIR}/06_vep/${SAMPLE}.vep.vcf"
-vep -i "${VCF}.gz" -o "$VEP_OUT" --vcf \
-    --species homo_sapiens --assembly GRCh38 \
-    --cache --offline --dir_cache "$VEP_CACHE" \
-    --everything --fork "$THREADS" \
-    --stats_file "${OUTDIR}/06_vep/${SAMPLE}.vep_summary.html"
-
-# Ejemplo de filtrado (pregunta de la práctica): variantes stop_gained en VWF
-filter_vep -i "$VEP_OUT" -o "${OUTDIR}/06_vep/${SAMPLE}.VWF_stop_gained.vcf" \
-           --filter "SYMBOL is VWF and Consequence is stop_gained" --force_overwrite
+# ---------------------------- 7. Anotación con VEP (web) ---------------------
+# Paso manual, fuera del script: subir ${VCF}.gz a https://www.ensembl.org/Tools/VEP
+# (Homo sapiens, GRCh38) y filtrar el resultado, p. ej. SYMBOL = VWF y
+# Consequence = stop_gained.
 
 log "Fin. Para IGV: ${DEDUP}, ${VCF}.gz y ${BED_USE}"
+log "Siguiente paso: anotar ${VCF}.gz en la web de Ensembl VEP"

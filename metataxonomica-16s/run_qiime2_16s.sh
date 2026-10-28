@@ -52,6 +52,7 @@ for f in "$MANIFEST" "$METADATA" "$CLASSIFIER" "$SEPP_REFS"; do [[ -s "$f" ]] ||
 
 log() { echo "[$(date '+%F %T')] $*" | tee -a "${OUTDIR}/pipeline.log"; }
 mkdir -p "${OUTDIR}"/{01_import,02_dada2,03_taxonomy,04_phylogeny,05_diversity,06_export}
+: > "${OUTDIR}/pipeline.log"   # registro nuevo en cada ejecución, sin restos de las anteriores
 log "Manifest: ${MANIFEST} | Metadatos: ${METADATA} | Hilos: ${THREADS}"
 
 # ---------------------------- 0. Metadatos -----------------------------------

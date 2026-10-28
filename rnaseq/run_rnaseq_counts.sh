@@ -45,6 +45,7 @@ for f in "$READS" "$GTF" "${INDEX}.1.ht2"; do [[ -s "$f" ]] || { echo "No existe
 
 log() { echo "[$(date '+%F %T')] $*" | tee -a "${OUTDIR}/pipeline.log"; }
 mkdir -p "${OUTDIR}"/{01_qc_raw,02_trimming,03_alignment,04_counts}
+: > "${OUTDIR}/pipeline.log"   # registro nuevo en cada ejecución, sin restos de las anteriores
 log "Muestra: ${SAMPLE} | Índice: ${INDEX} | GTF: ${GTF}"
 
 # ---------------------------- 1. Calidad inicial -----------------------------

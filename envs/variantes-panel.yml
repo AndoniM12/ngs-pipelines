@@ -12,4 +12,3 @@ dependencies:
   - picard
   - freebayes
   - rtg-tools
-  - ensembl-vep
