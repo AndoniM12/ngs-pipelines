@@ -8,6 +8,7 @@ ref/
 *.qza
 *.qzv
 *.bed
+.Rhistory
 
 # Resultados de los pipelines
 resultados/
