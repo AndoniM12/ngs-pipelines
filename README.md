@@ -512,7 +512,7 @@ resultados_de/                      (b)
 
 | Paso | Métrica | Valor |
 |---|---|---|
-| Lecturas (SRR1552444, SE 100 pb) | Crudas / tras Trim Galore | 27.919.481 / 27.906.762 |
+| Lecturas (SRR1552444, SE 100 pb) | Crudas / tras Trim Galore | 27.919.481 / 27.904.493 |
 | HISAT2 (-k 1) | Lecturas alineadas | 97,1 % |
 | Qualimap rnaseq | Lecturas exónicas / sesgo 5'-3' | 84,7 % / 1,23 |
 | htseq-count | Lecturas asignadas a genes | 73,4 % (too_low_aQual 11,7 %) |
