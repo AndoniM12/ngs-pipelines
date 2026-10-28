@@ -193,7 +193,7 @@ conda activate variantes-panel
 cd variantes-panel && ./get_reference.sh
 ./run_variantes_panel.sh -1 NA12880_R1.fastq.gz -2 NA12880_R2.fastq.gz \
     -r ref/Homo_sapiens.GRCh38.dna.chromosome.12.fa \
-    -b trusightone.hg38.bed -s NA12880 -t 8
+    -b trusightone.hg38.bed -s NA12880 -t 4
 ```
 
 > [!NOTE]
@@ -280,7 +280,7 @@ flowchart TD
 conda activate genoma-bacteriano
 cd genoma-bacteriano && ./get_data.sh
 ./run_genoma_bacteriano.sh -1 data/SRR18072959_1.fastq.gz -2 data/SRR18072959_2.fastq.gz \
-    -g data/LT2_genomic.gbk -s SRR18072959 -m 500 -t 8
+    -g data/LT2_genomic.gbk -s SRR18072959 -m 500 -t 4
 ```
 
 | Opción | Descripción | Por defecto |
@@ -391,7 +391,7 @@ cd rnaseq && ./get_data.sh
 
 # (a) Preprocesado de una muestra hasta la tabla de recuentos
 ./run_rnaseq_counts.sh -r data/SRR1552444.fastq.gz -x data/mm10/genome \
-    -g data/gencode.vM10.annotation.gtf -s SRR1552444 -t 8
+    -g data/gencode.vM10.annotation.gtf -s SRR1552444 -t 4
 
 # (b) Expresión diferencial sobre la matriz de recuentos de las 12 muestras
 Rscript de_analysis.R data/GSE60450_Lactation-GenewiseCounts.txt.gz resultados_de
@@ -500,7 +500,7 @@ cd metataxonomica-16s && ./get_data.sh
 
 conda activate qiime2-2021.4
 ./run_qiime2_16s.sh -m data/manifest.tsv -d data/sample_metadata.tsv \
-    -c data/gg-13-8-99-515-806-nb-classifier.qza -r data/sepp-refs-gg-13-8.qza -t 8
+    -c data/gg-13-8-99-515-806-nb-classifier.qza -r data/sepp-refs-gg-13-8.qza -t 4
 
 conda activate metataxonomica-R
 Rscript analisis_phyloseq.R resultados data/sample_metadata.tsv resultados_R
