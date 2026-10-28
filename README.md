@@ -280,7 +280,7 @@ flowchart TD
 conda activate genoma-bacteriano
 cd genoma-bacteriano && ./get_data.sh
 ./run_genoma_bacteriano.sh -1 data/SRR18072959_1.fastq.gz -2 data/SRR18072959_2.fastq.gz \
-    -g data/LT2_genomic.gbk -s SRR18072959 -m 500 -t 4
+    -g data/LT2_genomic.gbk -s SRR18072959 -m 500 -t 8
 ```
 
 | Opción | Descripción | Por defecto |
@@ -304,28 +304,28 @@ resultados/
 └── 06_amr/          <muestra>.amrfinder.tsv y versión de la base de datos
 ```
 
-### Resultados de la práctica (sin filtrar contigs)
+### Resultados de la práctica (`-m 500 -t 8`)
 
 | Paso | Métrica | Valor |
 |---|---|---|
-| fastp (Q25, ≥ 151 pb) | Lecturas que pasan los filtros | 97 % · duplicación 9,1 % |
-| SPAdes (--careful) | k-meros / contigs | 21-127 / 4.044 |
-| QUAST | N50 / L50 | 137.003 pb / 13 |
-| QUAST | Contigs > 10 kb | 31 contigs, 4,81 Mb |
+| fastp (Q25, ≥ 151 pb) | Lecturas que pasan los filtros | 97 % · duplicación 9,0 % |
+| SPAdes (--careful) | k-meros / contigs | 21-127 / 4.047 |
+| QUAST | N50 / L50 (scaffolds) | 137.003 pb / 12 |
+| QUAST | Scaffolds > 10 kb | 30 scaffolds, 4,81 Mb |
 | QUAST | Cobertura media | ~104× |
-| Prokka | CDS / rRNA / tRNA | 7.205 / 18 / 101 |
+| Prokka (contigs ≥ 500 pb) | CDS / rRNA / tRNA | 6.587 / 15 / 92 |
 | AMRFinderPlus (90/90) | Gen de resistencia | *emrD* |
 
 ### Cambios respecto a la práctica
 
 - **Sintaxis de fastp corregida.** `--cut_front` y `--cut_tail` son opciones sin valor; el umbral se fija con `--cut_mean_quality`.
-- **Filtrado opcional de contigs** (`-m 500`). Con 4.044 contigs, un N90 de 503 pb y un L90 de 2.301, la mayoría eran fragmentos cortos. Eso explica que Prokka anotara ~7.200 CDS cuando un genoma de *Salmonella* tiene alrededor de 4.500. Los 31 contigs de más de 10 kb ya suman 4,8 Mb, prácticamente el genoma completo.
+- **Filtrado opcional de contigs** (`-m 500`). Con 4.043 scaffolds, un N90 de 503 pb y un L90 de 2.299, la mayoría eran fragmentos cortos. Los 30 scaffolds de más de 10 kb ya suman 4,8 Mb, prácticamente el genoma completo. Con `-m 500` quedan 2.319 contigs (6,68 Mb) y Prokka anota 6.587 CDS.
 - **AMRFinderPlus en modo combinado** (proteínas + nucleótidos + GFF), que detecta tanto genes como mutaciones puntuales y evita duplicados entre ambas búsquedas.
 
 ```mermaid
 pie showData
-    title Contigs del ensamblaje sin filtrar (4.044)
-    "> 10 kb (31 contigs = 4,81 Mb)" : 31
+    title Scaffolds del ensamblaje sin filtrar (4.043)
+    "> 10 kb (30 scaffolds = 4,81 Mb)" : 30
     "≤ 10 kb" : 4013
 ```
 
