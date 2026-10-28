@@ -54,7 +54,7 @@ log "Muestra: ${SAMPLE} | Referencia: ${REF} | Panel: ${BED} | Hilos: ${THREADS}
 
 # ---------------------------- 1. Calidad inicial -----------------------------
 log "1. FastQC sobre las lecturas crudas"
-fastqc -t "$THREADS" -o "${OUTDIR}/01_qc_raw" "$R1" "$R2"
+fastqc -t "$THREADS" --outdir "${OUTDIR}/01_qc_raw" "$R1" "$R2"
 
 # ---------------------------- 2. Limpieza ------------------------------------
 # --cut_front/--cut_tail: ventana deslizante en los extremos; --cut_mean_quality
@@ -69,7 +69,7 @@ fastp -i "$R1" -I "$R2" -o "$T1" -O "$T2" \
       --thread "$THREADS" \
       --html "${OUTDIR}/02_trimming/${SAMPLE}.fastp.html" \
       --json "${OUTDIR}/02_trimming/${SAMPLE}.fastp.json"
-fastqc -t "$THREADS" -o "${OUTDIR}/02_trimming" "$T1" "$T2"
+fastqc -t "$THREADS" --outdir "${OUTDIR}/02_trimming" "$T1" "$T2"
 
 # ---------------------------- 3. Referencia y mapeo --------------------------
 log "3. Indexado de la referencia (solo si falta)"

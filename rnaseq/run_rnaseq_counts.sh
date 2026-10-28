@@ -49,7 +49,7 @@ log "Muestra: ${SAMPLE} | Índice: ${INDEX} | GTF: ${GTF}"
 
 # ---------------------------- 1. Calidad inicial -----------------------------
 log "1. FastQC sobre las lecturas crudas"
-fastqc -t "$THREADS" -o "${OUTDIR}/01_qc_raw" "$READS"
+fastqc -t "$THREADS" --outdir "${OUTDIR}/01_qc_raw" "$READS"
 
 # ---------------------------- 2. Recorte -------------------------------------
 # Parámetros por defecto: detección automática del adaptador, Q20 en el extremo

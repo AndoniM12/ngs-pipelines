@@ -58,7 +58,7 @@ log "Muestra: ${SAMPLE} | Referencia: ${REF_GBK} | Hilos: ${THREADS}"
 
 # ---------------------------- 1. Calidad inicial -----------------------------
 log "1. FastQC sobre las lecturas crudas"
-fastqc -t "$THREADS" -o "${OUTDIR}/01_qc_raw" "$R1" "$R2"
+fastqc -t "$THREADS" --outdir "${OUTDIR}/01_qc_raw" "$R1" "$R2"
 
 # ---------------------------- 2. Limpieza ------------------------------------
 log "2. Limpieza con fastp (Q${MIN_QUAL}, longitud mínima ${MIN_LEN} pb)"
@@ -70,7 +70,7 @@ fastp -i "$R1" -I "$R2" -o "$T1" -O "$T2" \
       --detect_adapter_for_pe --thread "$THREADS" \
       --html "${OUTDIR}/02_trimming/${SAMPLE}.fastp.html" \
       --json "${OUTDIR}/02_trimming/${SAMPLE}.fastp.json"
-fastqc -t "$THREADS" -o "${OUTDIR}/02_trimming" "$T1" "$T2"
+fastqc -t "$THREADS" --outdir "${OUTDIR}/02_trimming" "$T1" "$T2"
 
 # ---------------------------- 3. Ensamblaje de novo --------------------------
 # --careful: corrección de errores (BayesHammer) + ensamblaje + corrección de
