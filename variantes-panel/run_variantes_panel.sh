@@ -105,7 +105,12 @@ else
 fi
 # Restringir el BED a los contigs presentes en la referencia (p. ej. solo chr12)
 cut -f1 "${REF}.fai" > "${OUTDIR}/03_mapping/contigs.txt"
+# y ordenarlo/fusionar solapes: FreeBayes recorre las regiones en el orden del
+# BED, así que uno desordenado o solapado da un VCF desordenado y duplicado.
 awk 'NR==FNR{c[$1]; next} ($1 in c)' "${OUTDIR}/03_mapping/contigs.txt" "$BED_USE" \
+  | sort -k1,1 -k2,2n \
+  | awk 'BEGIN{OFS="\t"} $1==c && $2<=e {if ($3>e) e=$3; next}
+         {if (NR>1) print c, s, e; c=$1; s=$2; e=$3} END{if (NR) print c, s, e}' \
   > "${BED_USE}.tmp" && mv "${BED_USE}.tmp" "$BED_USE"
 
 qualimap bamqc -bam "$BAM" -gff "$BED_USE" -c -nt "$THREADS" -gd HUMAN \
