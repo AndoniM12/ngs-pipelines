@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Descarga las lecturas públicas del aislado clínico de Salmonella enterica
-# (SRR18072959) y el genoma de referencia S. Typhimurium LT2 (RefSeq) en GenBank.
+# Descarga las lecturas públicas del aislado SAL4 de Salmonella enterica serovar
+# Typhimurium (queso, Michoacán; BioProject PRJNA802840, run SRR18072959) y el
+# genoma de referencia S. Typhimurium LT2 (RefSeq) en GenBank.
 set -euo pipefail
 mkdir -p data && cd data
 fasterq-dump --split-files --threads 4 SRR18072959

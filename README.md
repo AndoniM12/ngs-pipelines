@@ -76,10 +76,10 @@ flowchart LR
 
 | Pipeline | Pregunta | Datos de la práctica | Lecturas | Salida principal |
 |---|---|---|---|---|
-| [`variantes-panel`](variantes-panel/) | ¿Qué variantes germinales tiene el paciente y cuáles son patogénicas? | Panel TruSight One, muestra NA12880, GRCh38 (chr12) | PE 2 × 151 pb | VCF (anotado después en VEP web) |
-| [`genoma-bacteriano`](genoma-bacteriano/) | ¿Cómo es el genoma de este aislado y qué resistencias porta? | *Salmonella enterica*, aislado clínico SRR18072959 | PE | Ensamblaje, anotación y genes AMR |
+| [`variantes-panel`](variantes-panel/) | ¿Qué variantes germinales tiene el paciente y cuáles son patogénicas? | Panel TruSight One, muestra NA12880 (Platinum Genomes), GRCh38 (chr12) | PE 2 × 151 pb | VCF (anotado después en VEP web) |
+| [`genoma-bacteriano`](genoma-bacteriano/) | ¿Cómo es el genoma de este aislado y qué resistencias porta? | *S.* Typhimurium SAL4, aislado de queso, SRR18072959 (PRJNA802840) | PE | Ensamblaje, anotación y genes AMR |
 | [`rnaseq`](rnaseq/) | ¿Qué genes cambian su expresión entre gestación y lactancia? | Glándula mamaria de ratón, GSE60450 (Fu et al., 2015) | SE 100 pb | Tablas de DEG, figuras y GO |
-| [`metataxonomica-16s`](metataxonomica-16s/) | ¿Cambia la microbiota intestinal según el donante (sano / Parkinson)? | Tutorial *PD mice* de QIIME 2 | SE 150 pb (V4) | Tabla de ASVs, taxonomía y diversidad |
+| [`metataxonomica-16s`](metataxonomica-16s/) | ¿Cambia la microbiota intestinal según el donante (sano / Parkinson)? | Tutorial *PD mice* de QIIME 2 (Sampson et al., 2016) | SE 150 pb (V4) | Tabla de ASVs, taxonomía y diversidad |
 
 ### Herramientas por etapa
 
@@ -188,6 +188,8 @@ flowchart LR
 ## 1. Variantes en panel de captura
 
 **Objetivo:** identificar y anotar variantes germinales (SNVs e indels pequeños) en las regiones de un panel de captura clínico, y priorizar las patogénicas.
+
+**Datos:** lecturas del panel TruSight One de la muestra NA12880, procedentes del material del máster (sin accesión pública). NA12880 pertenece al pedigrí CEPH 1463 secuenciado en Platinum Genomes: Eberle MA *et al.* (2017). A reference data set of 5.4 million phased human variants validated by genetic inheritance from sequencing a three-generation 17-member pedigree. *Genome Res* 27(1):157-164. [doi:10.1101/gr.210500.116](https://doi.org/10.1101/gr.210500.116)
 
 ```mermaid
 flowchart TD
@@ -304,7 +306,9 @@ Para revisar en IGV: `04_dedup/<muestra>.dedup.bam`, `05_variants/<muestra>.vcf.
 
 ## 2. Genoma bacteriano
 
-**Objetivo:** ensamblar *de novo* el genoma de un aislado clínico, evaluar la calidad del ensamblaje, anotarlo y detectar genes y mutaciones de resistencia a antimicrobianos.
+**Objetivo:** ensamblar *de novo* el genoma de un aislado de *Salmonella* de origen alimentario, evaluar la calidad del ensamblaje, anotarlo y detectar genes y mutaciones de resistencia a antimicrobianos.
+
+**Datos:** *Salmonella enterica* subsp. *enterica* serovar Typhimurium cepa SAL4, aislada de una muestra de queso en Michoacán (México) por la Universidad Michoacana de San Nicolás de Hidalgo. Illumina MiSeq, paired-end. BioProject [PRJNA802840](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA802840), run SRR18072959 (sin publicación asociada).
 
 ```mermaid
 flowchart TD
@@ -412,6 +416,8 @@ resultados/
 ## 3. RNA-seq: de lecturas a genes diferencialmente expresados
 
 **Objetivo:** cuantificar la expresión génica y encontrar los genes que cambian entre gestación y lactancia en células luminales y basales de la glándula mamaria de ratón.
+
+**Datos:** Fu NY *et al.* (2015). EGF-mediated induction of Mcl-1 at the switch to lactation is essential for alveolar cell survival. *Nat Cell Biol* 17(4):365-375. [doi:10.1038/ncb3117](https://doi.org/10.1038/ncb3117) · GEO [GSE60450](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60450)
 
 El pipeline tiene **dos partes independientes**:
 
@@ -559,6 +565,8 @@ pie showData
 ## 4. Metataxonómica 16S rRNA
 
 **Objetivo:** describir la composición y la diversidad de la microbiota intestinal de ratones (wild type y susceptibles, ASO) que recibieron un trasplante fecal de donantes sanos o con Parkinson.
+
+**Datos:** tutorial [*Parkinson's Mouse*](https://docs.qiime2.org/2021.4/tutorials/pd-mice/) de QIIME 2 (versión 2021.4), basado en Sampson TR *et al.* (2016). Gut Microbiota Regulate Motor Deficits and Neuroinflammation in a Model of Parkinson's Disease. *Cell* 167(6):1469-1480.e12. [doi:10.1016/j.cell.2016.11.018](https://doi.org/10.1016/j.cell.2016.11.018)
 
 El análisis se divide entre **QIIME 2** (de las lecturas a las métricas de diversidad) y **R** (estadística y figuras con phyloseq), cada uno en su propio entorno.
 
