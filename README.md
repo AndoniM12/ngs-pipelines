@@ -538,6 +538,18 @@ pie showData
 - **Interpretación de los coeficientes del GLM.** Son log-abundancias relativas, no recuentos. Que *Xkr4* tenga el mismo valor (−19,03) en los tres grupos luminales indica cero recuentos: es el límite inferior del modelo, no un valor de expresión real.
 - **Composición de las librerías.** Los norm.factors < 1 de las muestras luminales gestante y lactantes se deben a que unos pocos genes muy expresados (caseínas como *Csn1s2a*) acaparan una parte importante de las lecturas. TMM corrige ese sesgo de composición.
 - **El volcano plot muestra −log10(FDR)**, no log10.
+- **Identificadores de gen distintos en (a) y (b).** `run_rnaseq_counts.sh` cuenta con htseq-count sobre el GTF de GENCODE, así que la tabla usa IDs de Ensembl con versión (`ENSMUSG00000000001.4`). La matriz de GEO la generaron los autores con featureCounts y la anotación integrada de mm10 (RefSeq), indexada por Entrez Gene ID. Para llevar la tabla de (a) a Entrez se quitan las filas `__*` de htseq-count y la versión del ID, y se mapea con `org.Mm.eg.db`:
+
+  ```r
+  cs <- read.delim("resultados/04_counts/SRR1552444.counts.tsv", header = FALSE,
+                   col.names = c("gene_id", "counts"))
+  cs <- cs[!startsWith(cs$gene_id, "__"), ]
+  cs$entrez <- mapIds(org.Mm.eg.db, keys = sub("\\.\\d+$", "", cs$gene_id),
+                      keytype = "ENSEMBL", column = "ENTREZID", multiVals = "first")
+  by_entrez <- tapply(cs$counts, cs$entrez, sum)   # descarta los NA y suma duplicados
+  ```
+
+  La equivalencia no es 1:1: muchos genes de GENCODE (lncRNA, pseudogenes) no tienen Entrez y varios Ensembl pueden caer en el mismo Entrez. Aun con los mismos IDs, los recuentos no coinciden exactamente con la columna de GEO porque cambian la anotación, el alineador y el contador. Con SRR1552444 quedan 18.134 de 48.440 genes Ensembl sin Entrez y se recuperan 23.293 de los 27.179 genes de GEO. La correlación (log2) más alta es con MCL1-LA (r = 0,983; 0,977 con su réplica LB), lo que confirma que SRR1552444 es esa muestra.
 
 > [!NOTE]
 > Filtrar *a posteriori* por |logFC| ≥ 1 sobre el test QL es lo que pedía la práctica. El enfoque más riguroso es contrastar directamente frente a ese umbral con `glmTreat`.
