@@ -18,7 +18,7 @@ Parten de las prácticas de las asignaturas *Secuenciación genómica y análisi
 | 🩺 [Variantes en panel](#1-variantes-en-panel-de-captura) | NA12880 · TruSight One · GRCh38 chr12 | 95,7× de cobertura media en el panel; variante *VWF* stop_gained patogénica (enfermedad de von Willebrand) |
 | 🦠 [Genoma bacteriano](#2-genoma-bacteriano) | *S.* Typhimurium SAL4 · MiSeq PE | Ensamblaje *de novo* de 4,8 Mb tras retirar un contaminante de baja cobertura; sin genes de resistencia adquirida (solo la bomba de eflujo intrínseca *emrD*) |
 | 🐭 [RNA-seq](#3-rna-seq-de-lecturas-a-genes-diferencialmente-expresados) | GSE60450 · 12 muestras de ratón | 3.312 genes cambian en células luminales entre gestación y lactancia; los que suben en ambos tipos celulares se enriquecen en biosíntesis de colesterol |
-| 🌱 [Metataxonómica 16S](#4-metataxonómica-16s-rrna) | Tutorial *PD mice* · 48 muestras | 287 ASVs; menor diversidad de Shannon en receptores de donante con Parkinson (2,54 frente a 2,90) |
+| 🌱 [Metataxonómica 16S](#4-metataxonómica-16s-rrna) | Tutorial *PD mice* · 48 muestras | 287 ASVs; menor diversidad de Shannon en receptores de donante con Parkinson (2,55 frente a 2,90; Wilcoxon por ratón p = 0,009) |
 
 ---
 
@@ -148,11 +148,12 @@ conda env create -f envs/metataxonomica-R.yml
 
 # qiime2R no está en Bioconda: se instala desde GitHub dentro del entorno de R
 conda activate metataxonomica-R
-Rscript -e 'remotes::install_github("jbisanz/qiime2R")'
+Rscript -e 'remotes::install_github("jbisanz/qiime2R", upgrade = "never")'
 
-# QIIME 2 (2021.4) se instala con su fichero oficial
+# QIIME 2 (2021.4) se instala con su fichero oficial. Con channel_priority: strict
+# (habitual en conda reciente) el solver se queda atascado: se fuerza flexible solo aquí
 wget https://data.qiime2.org/distro/core/qiime2-2021.4-py38-linux-conda.yml
-conda env create -n qiime2-2021.4 --file qiime2-2021.4-py38-linux-conda.yml
+CONDA_CHANNEL_PRIORITY=flexible conda env create -n qiime2-2021.4 --file qiime2-2021.4-py38-linux-conda.yml
 ```
 
 | Entorno | Pipeline | Herramientas principales |
@@ -292,7 +293,7 @@ Para revisar en IGV: `04_dedup/<muestra>.dedup.bam`, `05_variants/<muestra>.vcf.
 | Paso | Métrica | Valor |
 |---|---|---|
 | Lecturas crudas | Pares | 7.939.910 (2 × 32-151 pb) |
-| fastp (Q28, ≥ 100 pb) | Lecturas que pasan los filtros | 97,3 % · duplicación 2,6 % |
+| fastp (Q28, ≥ 100 pb) | Lecturas que pasan los filtros | 97,3 % · duplicación 2,5 % |
 | Qualimap (regiones del panel) | Cobertura media / MAPQ medio | 95,7× / 59,3 |
 | FreeBayes (C = 30, regiones del panel) | Variantes / SNPs / Het:Hom | 2.311 / 1.601 / 17,24 |
 | VEP (web) | Hallazgo | *VWF* stop_gained 12:6019487 G>A, patogénica en ClinVar (enfermedad de von Willebrand) |
@@ -694,15 +695,26 @@ resultados_R/                     (R)
 
 ### Resultados de la práctica
 
+El análisis en R se ha ejecutado con R 4.5.3, phyloseq 1.54.2, vegan 2.7 y qiime2R 0.99.6.
+
 | Paso | Métrica | Valor |
 |---|---|---|
 | Diseño | Muestras / jaulas | 48 muestras, 6 jaulas; 4 grupos genotipo × donante |
 | DADA2 | Muestra problemática | recip.460.WT.HC3.D49: 16.327 lecturas → 9.919 tras el filtrado → 347 tras la eliminación de ruido (2,1 %) |
-| Taxonomía (nivel 5) | Familias más abundantes | Bacteroidaceae, Lachnospiraceae, Porphyromonadaceae |
+| Taxonomía (nivel 5) | Familias más abundantes | Bacteroidaceae (54,8 %), Lachnospiraceae (22,7 %), Porphyromonadaceae (4,5 %) |
 | Rarefacción | Jaula con mayor diversidad | C31 (Shannon) |
 | phyloseq | ASVs / Clostridiales | 287 / 156 |
-| Shannon (media) | Donante sano / Parkinson | 2,90 / 2,54 |
-| Árbol Betaproteobacteria | Hallazgo | *Sutterella* (Alcaligenaceae) predominante; Comamonadaceae y Rhodocyclaceae en receptores de donante PD |
+| Shannon (media) | Donante sano / Parkinson | 2,90 / 2,55 |
+| Wilcoxon Shannon ~ donante | Por muestra (47) / por ratón (12) | p = 3,0·10⁻⁵ / p = 0,009 |
+| PERMANOVA (`adonis2`, marginal) | Donante: R² (p) | Bray-Curtis 0,50 (0,001); UniFrac ponderado 0,29 (0,001) |
+| PERMANOVA (`adonis2`, marginal) | Genotipo: R² (p) | Bray-Curtis 0,03 (0,056); UniFrac ponderado 0,06 (0,014) |
+| Árbol Betaproteobacteria | Hallazgo | *Sutterella* (Alcaligenaceae) predominante, solo en receptores de donante sano; Rhodocyclaceae solo en receptores de donante PD; Comamonadaceae (*Acidovorax*, *Comamonas*) en ambos |
+
+<p align="center">
+  <img src="docs/img/16s_shannon.png" width="44%" alt="Diversidad de Shannon por donante">
+  <img src="docs/img/16s_pcoa_bray.png" width="52%" alt="PCoA Bray-Curtis">
+</p>
+<p align="center"><sub><b>Izquierda:</b> Shannon por muestra según el donante (línea roja: media). <b>Derecha:</b> PCoA con Bray-Curtis; el primer eje (56,7 %) separa los receptores de donante sano y con Parkinson.</sub></p>
 
 ### Cambios respecto a la práctica
 

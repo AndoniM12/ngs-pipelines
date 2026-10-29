@@ -1,6 +1,6 @@
 # Entorno de R para el análisis posterior a QIIME 2.
 # qiime2R no está en Bioconda: tras crear el entorno, instalarlo desde GitHub:
-#   Rscript -e 'remotes::install_github("jbisanz/qiime2R")'
+#   Rscript -e 'remotes::install_github("jbisanz/qiime2R", upgrade = "never")'
 name: metataxonomica-R
 channels:
   - conda-forge
@@ -10,5 +10,6 @@ dependencies:
   - r-remotes
   - r-ggplot2
   - r-vegan
+  - r-hmisc           # dependencia de qiime2R
   - bioconductor-phyloseq
   - bioconductor-microbiome

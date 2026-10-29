@@ -13,3 +13,4 @@ ref/
 # Resultados de los pipelines
 resultados/
 resultados_*/
+*.log
