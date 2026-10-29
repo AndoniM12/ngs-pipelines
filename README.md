@@ -16,7 +16,7 @@ Parten de las prácticas de las asignaturas *Secuenciación genómica y análisi
 | Pipeline | Datos | Resultado principal |
 |---|---|---|
 | 🩺 [Variantes en panel](#1-variantes-en-panel-de-captura) | NA12880 · TruSight One · GRCh38 chr12 | 95,7× de cobertura media en el panel; variante *VWF* stop_gained patogénica (enfermedad de von Willebrand) |
-| 🦠 [Genoma bacteriano](#2-genoma-bacteriano) | *S.* Typhimurium SAL4 · MiSeq PE | Ensamblaje *de novo* con N50 de 137 kb, 6.587 CDS anotadas y gen de resistencia *emrD* |
+| 🦠 [Genoma bacteriano](#2-genoma-bacteriano) | *S.* Typhimurium SAL4 · MiSeq PE | Ensamblaje *de novo* de 4,8 Mb tras retirar un contaminante de baja cobertura; sin genes de resistencia adquirida (solo la bomba de eflujo intrínseca *emrD*) |
 | 🐭 [RNA-seq](#3-rna-seq-de-lecturas-a-genes-diferencialmente-expresados) | GSE60450 · 12 muestras de ratón | 3.312 genes cambian en células luminales entre gestación y lactancia; los que suben en ambos tipos celulares se enriquecen en biosíntesis de colesterol |
 | 🌱 [Metataxonómica 16S](#4-metataxonómica-16s-rrna) | Tutorial *PD mice* · 48 muestras | 287 ASVs; menor diversidad de Shannon en receptores de donante con Parkinson (2,54 frente a 2,90) |
 
@@ -336,8 +336,8 @@ flowchart TD
 
     subgraph S2["2 · Montar el genoma como un puzle"]
         direction LR
-        SP["🧩 Unir lecturas<br/>que se solapan<br/><i>SPAdes</i>"] --> F{"¿Quitar las<br/>piezas pequeñas?<br/><i>-m</i>"}
-        F -- "sí" --> SK["✂️ Descartar contigs cortos<br/><i>seqkit</i>"] --> CT[("🧬 Contigs")]
+        SP["🧩 Unir lecturas<br/>que se solapan<br/><i>SPAdes</i>"] --> F{"¿Quitar piezas pequeñas<br/>o con poca cobertura?<br/><i>-m · -c</i>"}
+        F -- "sí" --> SK["✂️ Descartar contigs cortos<br/>o de baja cobertura<br/><i>seqkit · awk</i>"] --> CT[("🧬 Contigs")]
         F -- "no" --> CT
     end
 
@@ -380,7 +380,7 @@ flowchart TD
 conda activate genoma-bacteriano
 cd genoma-bacteriano && ./get_data.sh
 ./run_genoma_bacteriano.sh -1 data/SRR18072959_1.fastq.gz -2 data/SRR18072959_2.fastq.gz \
-    -g data/LT2_genomic.gbk -s SRR18072959 -m 500 -t 8
+    -g data/LT2_genomic.gbk -s SRR18072959 -m 500 -c 10 -t 4
 ```
 
 | Opción | Descripción | Por defecto |
@@ -389,6 +389,7 @@ cd genoma-bacteriano && ./get_data.sh
 | `-g` | Genoma de referencia anotado (GenBank) para Prokka | obligatorio |
 | `-s` | Nombre de la muestra | obligatorio |
 | `-m` | Longitud mínima de contig (0 = sin filtrar, como en la práctica) | `0` (recomendado `500`) |
+| `-c` | Cobertura mínima de contig, leída de la cabecera de SPAdes (0 = sin filtrar) | `0` (recomendado `10`) |
 | `-O` | Organismo para AMRFinderPlus | `Salmonella` |
 | `-o` / `-t` | Directorio de salida / hilos | `resultados` / `4` |
 
@@ -398,32 +399,47 @@ cd genoma-bacteriano && ./get_data.sh
 resultados/
 ├── 01_qc_raw/       FastQC de las lecturas crudas
 ├── 02_trimming/     FASTQ limpios + informes fastp y FastQC
-├── 03_assembly/     spades/ y <muestra>.contigs.fasta (filtrado si -m > 0)
+├── 03_assembly/     spades/ y <muestra>.contigs.fasta (filtrado si -m o -c > 0)
 ├── 04_quast/        report.txt / report.html
 ├── 05_annotation/   ref_prots.faa y prokka/ (.gff, .gbk, .faa, .fna, .tsv…)
 └── 06_amr/          <muestra>.amrfinder.tsv y versión de la base de datos
 ```
 
-### Resultados de la práctica (`-m 500 -t 8`)
+### Resultados de la práctica (`-m 500 -c 10 -t 4`)
 
 | Paso | Métrica | Valor |
 |---|---|---|
-| fastp (Q25, ≥ 151 pb) | Lecturas que pasan los filtros | 97 % · duplicación 9,0 % |
+| fastp (Q25, ≥ 151 pb) | Lecturas que pasan los filtros | 97 % (3.253.240 → 3.155.758) · duplicación 9,0 % |
 | SPAdes (--careful) | k-meros / contigs | 21-127 / 4.047 |
-| QUAST | N50 / L50 (scaffolds) | 137.003 pb / 12 |
-| QUAST | Scaffolds > 10 kb | 30 scaffolds, 4,81 Mb |
-| QUAST | Cobertura media | ~104× |
-| Prokka (contigs ≥ 500 pb) | CDS / rRNA / tRNA | 6.587 / 15 / 92 |
-| AMRFinderPlus (90/90) | Gen de resistencia | *emrD* |
+| Filtrado (`-m 500 -c 10`) | Contigs / longitud / GC | 48 / 4,84 Mb / 52,2 % |
+| QUAST (contigs filtrados) | N50 / L50 · N90 / L90 | 377.311 pb / 5 · 75.190 pb / 20 |
+| QUAST (contigs filtrados) | Cobertura media / pares bien emparejados | 158× / 96,2 % |
+| Prokka | CDS / rRNA / tRNA | 4.554 / 13 / 77 |
+| AMRFinderPlus (90/90) | Genes de resistencia | Ninguno adquirido (solo *emrD*, eflujo, `Scope` = `plus`) |
 
 ### Cambios respecto a la práctica
 
 - **Sintaxis de fastp corregida.** `--cut_front` y `--cut_tail` son opciones sin valor; el umbral se fija con `--cut_mean_quality`.
-- **Filtrado opcional de contigs** (`-m 500`). Con 4.043 scaffolds, un N90 de 503 pb y un L90 de 2.299, la mayoría eran fragmentos cortos. Los 30 scaffolds de más de 10 kb ya suman 4,8 Mb, prácticamente el genoma completo. Con `-m 500` quedan 2.319 contigs (6,68 Mb) y Prokka anota 6.587 CDS.
+- **Filtrado opcional de contigs por longitud** (`-m 500`). Con 4.043 scaffolds, un N90 de 503 pb y un L90 de 2.299, la mayoría eran fragmentos cortos. Los 30 scaffolds de más de 10 kb ya suman 4,8 Mb, prácticamente el genoma completo. Con `-m 500` quedan 2.319 contigs (6,68 Mb) y Prokka anota 6.587 CDS, demasiadas para *Salmonella* (~4.500-4.800).
+- **Filtrado por cobertura** (`-c 10`), que la práctica no incluía. Filtrar solo por longitud no basta: los contigs sobrantes son de otro organismo (ver nota). Con `-m 500 -c 10` quedan 48 contigs y 4,84 Mb, y Prokka anota 4.554 CDS.
+- **QUAST desde cero en cada ejecución.** Si `04_quast/` ya existe, QUAST reutiliza las estadísticas de mapeo de lecturas (`.stat`) de la ejecución anterior aunque los contigs hayan cambiado. El script borra el directorio antes de lanzarlo.
 - **AMRFinderPlus en modo combinado** (proteínas + nucleótidos + GFF), que detecta tanto genes como mutaciones puntuales y evita duplicados entre ambas búsquedas.
 
+> [!WARNING]
+> **El ensamblaje incluye ADN de un segundo organismo.** SPAdes guarda la cobertura de cada contig en su nombre (`NODE_1_length_660473_cov_74.6`). Al agrupar los 2.319 contigs de ≥ 500 pb:
+>
+> | Contigs | n | Longitud | Cobertura media | GC |
+> |---|---|---|---|---|
+> | Cobertura ≥ 10× | 48 | 4,84 Mb | ~75× | 52,2 % |
+> | Cobertura < 10× | 2.271 | 1,84 Mb | ~3-6× | 59,3 % |
+>
+> El primer grupo es el genoma de *Salmonella* (tamaño y GC esperados, ~52 %). El segundo tiene un GC muy distinto, así que no son errores del ensamblaje, sino ADN de otro organismo a baja abundancia (no se ha identificado). Los 10 genes de AMRFinderPlus caen en contigs del primer grupo. QUAST sigue evaluando también `scaffolds.fasta` sin filtrar (4.043 scaffolds, 7,4 Mb, N50 137.003 pb) como referencia.
+
+<p align="center"><img src="docs/img/genoma_quast_acumulado.png" width="60%" alt="Longitud acumulada de los contigs (QUAST)"></p>
+<p align="center"><sub>Longitud acumulada (QUAST, ejecución con <code>-m 500</code>): unos 30 contigs suman el genoma y los ~2.000 restantes añaden casi 2 Mb a baja cobertura.</sub></p>
+
 > [!NOTE]
-> **¿Por qué *emrD*?** Con `--plus`, AMRFinderPlus devuelve 10 genes, pero solo *emrD* tiene `Element type` = `AMR`. Los otros 9 son de virulencia (`VIRULENCE`: *invA*, *spvD*, *sseK2*…) o de respuesta al estrés (`STRESS`: *asr*).
+> **¿Por qué *emrD*?** Con `--plus`, AMRFinderPlus devuelve 10 genes, pero solo *emrD* tiene `Element type` = `AMR`, y aparece con `Scope` = `plus` y `Subclass` = `EFFLUX`: es una bomba de eflujo cromosómica, no un gen de resistencia adquirida del conjunto *core*. El aislado no tiene genes de resistencia adquirida. Los otros 9 son de virulencia (`VIRULENCE`: *invA*, *spvD*, *sseK2*…) o de respuesta al estrés (`STRESS`: *asr*).
 
 ---
 

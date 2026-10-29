@@ -3,7 +3,7 @@
 # Pipeline de ensamblaje de novo y caracterización de genomas bacterianos
 # Illumina paired-end
 #
-#   FastQC -> fastp -> FastQC -> SPAdes -> (filtrado de contigs) -> QUAST
+#   FastQC -> fastp -> FastQC -> SPAdes -> (filtrado por longitud y cobertura) -> QUAST
 #   -> Prokka (proteoma de referencia) -> AMRFinderPlus
 #
 # Autor: Andoni Moreno Lanceta
@@ -19,6 +19,8 @@ MIN_LEN=151          # fastp: longitud mínima tras el recorte
 MIN_QUAL=25          # fastp: calidad media de la ventana (inicio, final y media)
 MIN_CONTIG=0         # contigs más cortos se descartan antes de anotar
                      # (0 = como en la práctica; recomendado 500, ver README)
+MIN_COV=0            # cobertura k-mer mínima de contig (cov_ en la cabecera de SPAdes)
+                     # (0 = sin filtrar; recomendado 10 para quitar contaminación, ver README)
 ORGANISM="Salmonella"
 GENUS="Salmonella"
 SPECIES="enterica"
@@ -35,16 +37,18 @@ Opciones:
   -s  nombre de la muestra             -O  organismo para AMRFinderPlus [${ORGANISM}]
   -o  directorio de salida [${OUTDIR}] -t  hilos [${THREADS}]
   -m  longitud mínima de contig [${MIN_CONTIG}]
+  -c  cobertura mínima de contig, entero [${MIN_COV}]
 EOF
   exit 1
 }
 
-while getopts "1:2:g:s:O:o:t:m:h" opt; do
+while getopts "1:2:g:s:O:o:t:m:c:h" opt; do
   case $opt in
     1) R1=$OPTARG ;;       2) R2=$OPTARG ;;
     g) REF_GBK=$OPTARG ;;  s) SAMPLE=$OPTARG ;;
     O) ORGANISM=$OPTARG ;; o) OUTDIR=$OPTARG ;;
     t) THREADS=$OPTARG ;;  m) MIN_CONTIG=$OPTARG ;;
+    c) MIN_COV=$OPTARG ;;
     *) usage ;;
   esac
 done
@@ -81,16 +85,21 @@ ASM_DIR="${OUTDIR}/03_assembly/spades"
 spades.py -1 "$T1" -2 "$T2" --careful -k auto -t "$THREADS" -o "$ASM_DIR"
 
 CONTIGS="${OUTDIR}/03_assembly/${SAMPLE}.contigs.fasta"
-if (( MIN_CONTIG > 0 )); then
-  log "   Filtrando contigs < ${MIN_CONTIG} pb"
-  seqkit seq -m "$MIN_CONTIG" "${ASM_DIR}/contigs.fasta" > "$CONTIGS"
+if (( MIN_CONTIG > 0 || MIN_COV > 0 )); then
+  # Cabecera de SPAdes: >NODE_1_length_660473_cov_74.618249
+  log "   Filtrando contigs < ${MIN_CONTIG} pb o con cobertura < ${MIN_COV}"
+  seqkit seq -m "$MIN_CONTIG" "${ASM_DIR}/contigs.fasta" \
+    | awk -v mc="$MIN_COV" '/^>/ { split($0, h, "_cov_"); keep = (h[2] + 0 >= mc) } keep' > "$CONTIGS"
 else
   cp "${ASM_DIR}/contigs.fasta" "$CONTIGS"
 fi
-log "   Contigs: $(grep -c '>' "$CONTIGS")"
+log "   Contigs: $(grep -c '>' "$CONTIGS") ($(seqkit stats -T "$CONTIGS" | awk 'NR == 2 { print $5 }') pb)"
 
 # ---------------------------- 4. Evaluación del ensamblaje -------------------
 log "4. QUAST (todos los contigs, con mapeo de las lecturas)"
+# QUAST reutiliza estadísticas de lecturas (.stat) de ejecuciones anteriores si el
+# directorio ya existe, aunque los contigs hayan cambiado: se empieza de cero.
+rm -rf "${OUTDIR}/04_quast"
 quast.py -o "${OUTDIR}/04_quast" -m 0 -t "$THREADS" \
          --pe1 "$T1" --pe2 "$T2" "$CONTIGS" "${ASM_DIR}/scaffolds.fasta"
 
