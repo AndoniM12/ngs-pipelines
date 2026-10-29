@@ -5,10 +5,20 @@
 ![Conda](https://img.shields.io/badge/Conda-44A833?logo=anaconda&logoColor=white)
 ![QIIME 2](https://img.shields.io/badge/QIIME%202-2021.4-orange)
 ![Illumina](https://img.shields.io/badge/datos-Illumina-blue)
+![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-lightgrey)
 
 Colección de **cuatro pipelines reproducibles** para datos de secuenciación Illumina, que cubren los cuatro tipos de análisis NGS más habituales: variantes germinales en humano, genómica bacteriana, transcriptómica y metataxonómica.
 
 Parten de las prácticas de las asignaturas *Secuenciación genómica y análisis de variantes*, *Análisis transcriptómicos de la expresión génica* y *Análisis de datos ómicos para poblaciones* del Máster en Bioinformática (VIU, 2025-2026). Las he reescrito como **scripts parametrizados**, con **entornos Conda** y con varias **correcciones metodológicas** respecto a la versión original (ver la sección *Cambios respecto a la práctica* de cada pipeline).
+
+### En resumen
+
+| Pipeline | Datos | Resultado principal |
+|---|---|---|
+| 🩺 [Variantes en panel](#1-variantes-en-panel-de-captura) | NA12880 · TruSight One · GRCh38 chr12 | 95,7× de cobertura media en el panel; variante *VWF* stop_gained patogénica (enfermedad de von Willebrand) |
+| 🦠 [Genoma bacteriano](#2-genoma-bacteriano) | *S.* Typhimurium SAL4 · MiSeq PE | Ensamblaje *de novo* con N50 de 137 kb, 6.587 CDS anotadas y gen de resistencia *emrD* |
+| 🐭 [RNA-seq](#3-rna-seq-de-lecturas-a-genes-diferencialmente-expresados) | GSE60450 · 12 muestras de ratón | 3.312 genes cambian en células luminales entre gestación y lactancia; los que suben en ambos tipos celulares se enriquecen en biosíntesis de colesterol |
+| 🌱 [Metataxonómica 16S](#4-metataxonómica-16s-rrna) | Tutorial *PD mice* · 48 muestras | 287 ASVs; menor diversidad de Shannon en receptores de donante con Parkinson (2,54 frente a 2,90) |
 
 ---
 
@@ -98,6 +108,7 @@ flowchart LR
 
 ```text
 ngs-pipelines/
+├── docs/img/                      # Figuras de resultados que se muestran en este README
 ├── envs/                          # Un entorno Conda por pipeline
 │   ├── variantes-panel.yml
 │   ├── genoma-bacteriano.yml
@@ -288,6 +299,9 @@ Para revisar en IGV: `04_dedup/<muestra>.dedup.bam`, `05_variants/<muestra>.vcf.
 
 > [!NOTE]
 > Sin restringir la llamada al panel (FreeBayes sobre todo el cromosoma 12, sin `-t`) se obtienen unas 9.800 variantes, 6.530 SNPs y un Het:Hom de 3,5.
+
+<p align="center"><img src="docs/img/variantes_cobertura_panel.png" width="70%" alt="Histograma de cobertura en las regiones del panel (Qualimap)"></p>
+<p align="center"><sub>Cobertura en las regiones del panel (Qualimap): la mayoría de posiciones están entre 40× y 175×.</sub></p>
 
 ### Cambios respecto a la práctica
 
@@ -537,6 +551,15 @@ pie showData
     "▼ Bajan en lactancia" : 1530
 ```
 
+<p align="center">
+  <img src="docs/img/rnaseq_MDS.png" width="45%" alt="MDS de las 12 muestras">
+  <img src="docs/img/rnaseq_volcano_luminal.png" width="52%" alt="Volcano plot luminal lactante frente a gestante">
+</p>
+<p align="center"><sub><b>Izquierda:</b> MDS; las réplicas se agrupan y la primera dimensión (65 %) separa células basales y luminales. <b>Derecha:</b> volcano plot del contraste luminal lactante frente a gestante.</sub></p>
+
+<p align="center"><img src="docs/img/rnaseq_heatmap_up.png" width="70%" alt="Heatmap de los genes sobreexpresados en lactancia"></p>
+<p align="center"><sub>Los 114 genes que suben en lactancia en ambos tipos celulares (logCPM escalado por gen).</sub></p>
+
 ### Cambios y notas de interpretación
 
 - **`too_low_aQual` no son lecturas de baja calidad.** HISAT2 asigna MAPQ 0 o 1 a las lecturas multimapeadas (~4,1 millones en esta muestra) y htseq-count descarta por defecto las que tienen MAPQ < 10. Ese 11,7 % corresponde a lecturas con más de una localización posible (regiones repetitivas o genes parálogos).
@@ -708,4 +731,4 @@ flowchart TB
 
 ---
 
-<sub>Autor: Andoni Moreno Lanceta · Máster en Bioinformática (VIU, 2025-2026)</sub>
+<sub>Autor: Andoni Moreno Lanceta · Máster en Bioinformática (VIU, 2025-2026) · Licencia [MIT](LICENSE)</sub>
