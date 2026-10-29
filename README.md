@@ -510,6 +510,8 @@ resultados_de/                      (b)
 
 ### Resultados de la práctica
 
+La parte (b) se ha ejecutado con R 4.5.3, edgeR 4.10.7 y limma 3.68.5.
+
 | Paso | Métrica | Valor |
 |---|---|---|
 | Lecturas (SRR1552444, SE 100 pb) | Crudas / tras Trim Galore | 27.919.481 / 27.904.493 |
@@ -518,15 +520,15 @@ resultados_de/                      (b)
 | htseq-count | Lecturas asignadas a genes | 73,4 % (too_low_aQual 11,7 %) |
 | filterByExpr | Genes conservados | 15.969 de 27.179 (58,8 %) |
 | TMM | norm.factors < 1 | LD, LE, LF (luminales gestante y lactantes) |
-| QL F-test luminal lactante vs gestante | DEG (FDR ≤ 0,05, \|logFC\| ≥ 1) | 3.381 (1.805 up, 1.576 down) |
-| Genes up en lactancia (luminal y basal) | n / GO BP principal | 115 / biosíntesis de colesterol y esteroles |
+| QL F-test luminal lactante vs gestante | DEG (FDR ≤ 0,05, \|logFC\| ≥ 1) | 3.312 (1.782 up, 1.530 down) |
+| Genes up en lactancia (luminal y basal) | n / GO BP principal | 114 / biosíntesis de colesterol y esteroles |
 
 ```mermaid
 %%{init: {"themeVariables": {"pie1": "#dc2626", "pie2": "#2563eb", "pieStrokeColor": "#ffffff", "pieOuterStrokeWidth": "0px"}}}%%
 pie showData
-    title Células luminales: 3.381 genes cambian de la gestación a la lactancia
-    "▲ Suben en lactancia" : 1805
-    "▼ Bajan en lactancia" : 1576
+    title Células luminales: 3.312 genes cambian de la gestación a la lactancia
+    "▲ Suben en lactancia" : 1782
+    "▼ Bajan en lactancia" : 1530
 ```
 
 ### Cambios y notas de interpretación
